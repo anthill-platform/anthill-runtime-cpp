@@ -2,6 +2,9 @@
 #ifndef ONLINE_Storage_H
 #define ONLINE_Storage_H
 
+#include <memory>
+#include <string>
+
 namespace online
 {
 	typedef std::shared_ptr< class Storage > StoragePtr;
