@@ -11,6 +11,17 @@
 
 namespace online
 {
+	Credential::Credential(const std::string& raw)
+	{
+		size_t pos = raw.find_first_of(':');
+
+		if (pos == raw.npos)
+			return;
+
+		m_credentialType = raw.substr(0, pos);
+		m_username = raw.substr(pos + 1);
+	}
+
     std::time_t get_utc_timestamp()
     {
         std::time_t now = std::time(0);

@@ -53,10 +53,19 @@ namespace online
 	public:
 		static const std::string ID;
         static const std::string API_VERSION;
-
+		
 		typedef std::function< void(const SocialService& service, Request::Result result, const Request& request,
 			const SocialConnections& connections) > GetConnectionsCallback;
-
+		
+		typedef std::function< void(const SocialService& service, Request::Result result, const Request& request,
+			const std::string& key) > AddConnectionsCallback;
+		
+		typedef std::function< void(const SocialService& service, Request::Result result, const Request& request) > DeleteConnectionsCallback;
+		
+		typedef std::function< void(const SocialService& service, Request::Result result, const Request& request) > ApproveConnectionsCallback;
+		
+		typedef std::function< void(const SocialService& service, Request::Result result, const Request& request) > RejectConnectionsCallback;
+		
 	public:
 		static SocialServicePtr Create(const std::string& location);
 		virtual ~SocialService();
@@ -66,6 +75,33 @@ namespace online
             const std::set<std::string>& profileFields,
             GetConnectionsCallback callback);
         
+		void addConnection(
+			const std::string& account,
+			const std::string& accessToken,
+            AddConnectionsCallback callback,
+			bool approval = true,
+			const Json::Value& notify = Json::Value());
+		
+		void deleteConnection(
+			const std::string& account,
+			const std::string& accessToken,
+            DeleteConnectionsCallback callback,
+			const Json::Value& notify = Json::Value());
+
+		void approveConnection(
+			const std::string& account,
+			const std::string& key,
+			const std::string& accessToken,
+            ApproveConnectionsCallback callback,
+			const Json::Value& notify = Json::Value());
+
+		void rejectConnection(
+			const std::string& account,
+			const std::string& key,
+			const std::string& accessToken,
+            RejectConnectionsCallback callback,
+			const Json::Value& notify = Json::Value());
+
 	protected:
 		SocialService(const std::string& location);
         bool init();
