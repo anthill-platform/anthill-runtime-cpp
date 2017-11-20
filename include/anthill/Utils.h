@@ -17,6 +17,19 @@
 
 namespace online
 {
+	class Credential
+	{
+	public:
+		Credential(const std::string& raw);
+		
+		const std::string& getCredentialType() const { return m_credentialType; }
+		const std::string& getUsername() const { return m_username; }
+
+	private:
+		std::string m_credentialType;
+		std::string m_username;
+	};
+
 	std::string join(const std::set<std::string>& elements, const char* const separator);
 	std::string random_string(size_t length);
     std::string url_encode(const std::string &value);
