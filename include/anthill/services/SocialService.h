@@ -43,8 +43,39 @@ namespace online
         Credentials m_credentials;
         Json::Value m_profile;
 	};
+	    
+	class SocialRequest
+	{
+		
+		enum class Type
+		{
+			group = 1,
+			account,
+			unknown
+		};
+
+		friend class SocialService;
+        
+    public:
+    
+    public:
+        SocialRequest(const Json::Value& data);
+    
+        Type getType() const { return m_type; }
+		const std::string& getObject() const { return m_object; }
+		const Json::Value& getPayload() const { return m_payload; }
+		const std::string& getKey() const { return m_key; }
+        
+    private:
+        Type m_type;
+		std::string m_object;
+		Json::Value m_payload;
+		std::string m_key;
+	};
     
     typedef std::unordered_map<std::string, SocialConnection> SocialConnections;
+	
+    typedef std::list<SocialRequest> SocialRequests;
 
 	class SocialService : public Service
 	{
@@ -60,10 +91,11 @@ namespace online
 		typedef std::function< void(const SocialService& service, Request::Result result, const Request& request,
 			const std::string& key) > AddConnectionsCallback;
 		
+		typedef std::function< void(const SocialService& service, Request::Result result, const Request& request,
+			const SocialRequests& requests) > GetRequestsCallback;
+
 		typedef std::function< void(const SocialService& service, Request::Result result, const Request& request) > DeleteConnectionsCallback;
-		
 		typedef std::function< void(const SocialService& service, Request::Result result, const Request& request) > ApproveConnectionsCallback;
-		
 		typedef std::function< void(const SocialService& service, Request::Result result, const Request& request) > RejectConnectionsCallback;
 		
 	public:
@@ -74,13 +106,22 @@ namespace online
 			const std::string& accessToken,
             const std::set<std::string>& profileFields,
             GetConnectionsCallback callback);
+
+		void getIncomingRequests(
+			const std::string& accessToken,
+            GetRequestsCallback callback);
+
+		void getOutgoingRequests(
+			const std::string& accessToken,
+            GetRequestsCallback callback);
         
 		void addConnection(
 			const std::string& account,
 			const std::string& accessToken,
             AddConnectionsCallback callback,
 			bool approval = true,
-			const Json::Value& notify = Json::Value());
+			const Json::Value& notify = Json::Value(),
+			const Json::Value& payload = Json::Value());
 		
 		void deleteConnection(
 			const std::string& account,
