@@ -43,6 +43,40 @@ namespace online
             m_profile = data["profile"];
         }
     }
+	
+    SocialRequest::SocialRequest(const Json::Value& data)
+    {
+        if(data.isMember( "type" ))
+		{
+			std::string tempType = data["type"].asString();
+
+			if(tempType == "group")
+			{ 
+				m_type = Type::group;
+			}
+			else if (tempType == "account")
+			{
+				m_type = Type::account;
+			}
+			else
+			{
+				m_type = Type::unknown;
+			}
+		}
+		else
+		{
+			m_type = Type::unknown;
+		}
+				
+		if(data.isMember( "object" ))
+			m_object = data["object"].asString();
+				
+		if(data.isMember( "payload" ))
+			m_payload = data["payload"];
+				
+		if(data.isMember( "key" ))
+			m_key = data["key"].asString();
+	}
 
 	SocialServicePtr SocialService::Create(const std::string& location)
 	{
@@ -113,6 +147,273 @@ namespace online
 				{
 					callback(*this, request.getResult(), request, SocialConnections());
 				}
+			});
+		}
+		else
+		{
+			OnlineAssert(false, "Failed to construct a request.");
+		}
+
+		request->start();
+	}
+	
+	void SocialService::addConnection(
+		const std::string& account,
+		const std::string& accessToken,
+        AddConnectionsCallback callback,
+		bool approval,
+		const Json::Value& notify,
+		const Json::Value& payload)
+	{
+		JsonRequestPtr request = JsonRequest::Create(
+			getLocation() + "/connection/" + account, Request::METHOD_POST);
+
+		if (request)
+		{
+            request->setAPIVersion(API_VERSION);
+
+			Request::Fields fields = {
+                {"access_token", accessToken },
+				{ "approval", approval ? "true" : "false" }
+			};
+
+			if( notify.isObject() )
+				fields["notify"] = Json::FastWriter().write(notify);
+			
+			if( payload.isObject() )
+				fields["payload"] = Json::FastWriter().write(payload);
+
+			request->setPostFields(fields);
+                
+			request->setOnResponse([=](const online::JsonRequest& request)
+			{
+				if (request.isSuccessful() && request.isResponseValueValid())
+				{
+					const Json::Value& value = request.getResponseValue();
+					
+					std::string key;
+                    if (value.isMember("key"))
+					{
+						key = value["key"].asString();
+					}
+                    
+					callback(*this, request.getResult(), request, key);
+				}
+				else
+				{
+					callback(*this, request.getResult(), request, "");
+				}
+			});
+		}
+		else
+		{
+			OnlineAssert(false, "Failed to construct a request.");
+		}
+
+		request->start();
+	}
+	
+	void SocialService::getIncomingRequests(
+		const std::string& accessToken,
+        GetRequestsCallback callback) 
+	{
+		JsonRequestPtr request = JsonRequest::Create(
+			getLocation() + "/requests/incoming", Request::METHOD_GET);
+
+		if (request)
+		{
+            request->setAPIVersion(API_VERSION);
+
+			Request::Fields fields = {
+                {"access_token", accessToken },
+			};
+
+			request->setRequestArguments(fields);
+                
+			request->setOnResponse([=](const online::JsonRequest& request)
+			{
+				if (request.isSuccessful() && request.isResponseValueValid())
+				{
+					const Json::Value& value = request.getResponseValue();
+					SocialRequests requests;
+					
+					if (value.isMember("requests"))
+                    {
+                        const Json::Value& requestsJson = value["requests"];
+                        
+                        for (Json::ValueConstIterator it = requestsJson.begin(); it != requestsJson.end(); it++)
+                        {
+							requests.emplace_back(*it);
+                        }
+                    }
+					                    
+					callback(*this, request.getResult(), request, requests);
+				}
+				else
+				{
+					callback(*this, request.getResult(), request, {});
+				}
+			});
+		}
+		else
+		{
+			OnlineAssert(false, "Failed to construct a request.");
+		}
+
+		request->start();
+	}
+	
+	void SocialService::getOutgoingRequests(
+		const std::string& accessToken,
+        GetRequestsCallback callback) 
+	{
+		JsonRequestPtr request = JsonRequest::Create(
+			getLocation() + "/requests/outgoing", Request::METHOD_GET);
+
+		if (request)
+		{
+            request->setAPIVersion(API_VERSION);
+
+			Request::Fields fields = {
+                {"access_token", accessToken },
+			};
+
+			request->setRequestArguments(fields);
+                
+			request->setOnResponse([=](const online::JsonRequest& request)
+			{
+				if (request.isSuccessful() && request.isResponseValueValid())
+				{
+					const Json::Value& value = request.getResponseValue();
+					SocialRequests requests;
+					
+					if (value.isMember("requests"))
+                    {
+                        const Json::Value& requestsJson = value["requests"];
+                        
+                        for (Json::ValueConstIterator it = requestsJson.begin(); it != requestsJson.end(); it++)
+                        {
+							requests.emplace_back(*it);
+                        }
+                    }
+					                    
+					callback(*this, request.getResult(), request, requests);
+				}
+				else
+				{
+					callback(*this, request.getResult(), request, {});
+				}
+			});
+		}
+		else
+		{
+			OnlineAssert(false, "Failed to construct a request.");
+		}
+
+		request->start();
+	}
+
+	void SocialService::deleteConnection(
+		const std::string& account,
+		const std::string& accessToken,
+        DeleteConnectionsCallback callback,
+		const Json::Value& notify)
+	{
+		JsonRequestPtr request = JsonRequest::Create(
+			getLocation() + "/connection/" + account, Request::METHOD_DELETE);
+
+		if (request)
+		{
+            request->setAPIVersion(API_VERSION);
+
+			Request::Fields fields = {
+                {"access_token", accessToken }
+			};
+
+			if( notify.isObject() )
+				fields["notify"] = Json::FastWriter().write(notify);
+
+			request->setRequestArguments(fields);
+                
+			request->setOnResponse([=](const online::JsonRequest& request)
+			{
+				callback(*this, request.getResult(), request);
+			});
+		}
+		else
+		{
+			OnlineAssert(false, "Failed to construct a request.");
+		}
+
+		request->start();
+	}
+	
+	void SocialService::approveConnection(
+		const std::string& account,
+		const std::string& key,
+		const std::string& accessToken,
+        ApproveConnectionsCallback callback,
+		const Json::Value& notify)
+	{
+		JsonRequestPtr request = JsonRequest::Create(
+			getLocation() + "/connection/" + account + "/approve", Request::METHOD_POST);
+
+		if (request)
+		{
+            request->setAPIVersion(API_VERSION);
+
+			Request::Fields fields = {
+                {"access_token", accessToken },
+				{ "key", key }
+			};
+
+			if( notify.isObject() )
+				fields["notify"] = Json::FastWriter().write(notify);
+
+			request->setPostFields(fields);
+                
+			request->setOnResponse([=](const online::JsonRequest& request)
+			{
+				callback(*this, request.getResult(), request);
+			
+			});
+		}
+		else
+		{
+			OnlineAssert(false, "Failed to construct a request.");
+		}
+
+		request->start();
+	}
+
+	void SocialService::rejectConnection(
+		const std::string& account,
+		const std::string& key,
+		const std::string& accessToken,
+        RejectConnectionsCallback callback,
+		const Json::Value& notify)
+	{
+		JsonRequestPtr request = JsonRequest::Create(
+			getLocation() + "/connection/" + account + "/reject", Request::METHOD_POST);
+
+		if (request)
+		{
+            request->setAPIVersion(API_VERSION);
+
+			Request::Fields fields = {
+                {"access_token", accessToken },
+				{ "key", key }
+			};
+
+			if( notify.isObject() )
+				fields["notify"] = Json::FastWriter().write(notify);
+
+			request->setPostFields(fields);
+                
+			request->setOnResponse([=](const online::JsonRequest& request)
+			{
+				callback(*this, request.getResult(), request);
+			
 			});
 		}
 		else
