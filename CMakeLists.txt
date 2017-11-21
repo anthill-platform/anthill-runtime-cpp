@@ -2,7 +2,7 @@
 project(Anthill)
 set(CURL_MIN_VERSION "7.28.0")
 
-add_files(src SRCS)
+add_directory(src SRCS)
 add_directory(include INCL)
 include_directories(include)
 
