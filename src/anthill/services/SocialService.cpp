@@ -68,6 +68,28 @@ namespace online
 			m_type = Type::unknown;
 		}
 				
+        if(data.isMember( "kind" ))
+		{
+			std::string tempType = data["kind"].asString();
+
+			if(tempType == "outgoing")
+			{ 
+				m_kind = Kind::outgoing;
+			}
+			else if (tempType == "incoming")
+			{
+				m_kind = Kind::incoming;
+			}
+			else
+			{
+				m_kind = Kind::unknown;
+			}
+		}
+		else
+		{
+			m_kind = Kind::unknown;
+		}
+			
 		if(data.isMember( "object" ))
 			m_object = data["object"].asString();
 				
@@ -76,6 +98,24 @@ namespace online
 				
 		if(data.isMember( "key" ))
 			m_key = data["key"].asString();
+		
+		if(data.isMember( "profile" ))
+			m_profile = data["profile"];
+
+		if(data.isMember( "sender" ))
+			m_sender = data["sender"].asString();
+	}
+
+    SocialUniqueName::SocialUniqueName(const Json::Value& data)
+    {
+		if(data.isMember( "account" ))
+			m_account = data["account"].asString();
+				
+		if(data.isMember( "name" ))
+			m_name = data["name"].asString();
+				
+		if(data.isMember( "profile" ))
+			m_profile = data["profile"];
 	}
 
 	SocialServicePtr SocialService::Create(const std::string& location)
@@ -215,6 +255,7 @@ namespace online
 	
 	void SocialService::getIncomingRequests(
 		const std::string& accessToken,
+        const std::set<std::string>& profileFields,
         GetRequestsCallback callback) 
 	{
 		JsonRequestPtr request = JsonRequest::Create(
@@ -223,11 +264,19 @@ namespace online
 		if (request)
 		{
             request->setAPIVersion(API_VERSION);
-
+			
+            Json::Value profileFields_(Json::ValueType::arrayValue);
+            
+            for (const std::string& field: profileFields)
+            {
+                profileFields_.append(field);
+            }
+            
 			Request::Fields fields = {
                 {"access_token", accessToken },
+                {"profile_fields", Json::FastWriter().write(profileFields_)}
 			};
-
+			
 			request->setRequestArguments(fields);
                 
 			request->setOnResponse([=](const online::JsonRequest& request)
@@ -265,6 +314,7 @@ namespace online
 	
 	void SocialService::getOutgoingRequests(
 		const std::string& accessToken,
+        const std::set<std::string>& profileFields,
         GetRequestsCallback callback) 
 	{
 		JsonRequestPtr request = JsonRequest::Create(
@@ -273,9 +323,76 @@ namespace online
 		if (request)
 		{
             request->setAPIVersion(API_VERSION);
-
+			
+            Json::Value profileFields_(Json::ValueType::arrayValue);
+            
+            for (const std::string& field: profileFields)
+            {
+                profileFields_.append(field);
+            }
+            
 			Request::Fields fields = {
                 {"access_token", accessToken },
+                {"profile_fields", Json::FastWriter().write(profileFields_)}
+			};
+
+			request->setRequestArguments(fields);
+                
+			request->setOnResponse([=](const online::JsonRequest& request)
+			{
+				if (request.isSuccessful() && request.isResponseValueValid())
+				{
+					const Json::Value& value = request.getResponseValue();
+					SocialRequests requests;
+					
+					if (value.isMember("requests"))
+                    {
+                        const Json::Value& requestsJson = value["requests"];
+                        
+                        for (Json::ValueConstIterator it = requestsJson.begin(); it != requestsJson.end(); it++)
+                        {
+							requests.emplace_back(*it);
+                        }
+                    }
+					                    
+					callback(*this, request.getResult(), request, requests);
+				}
+				else
+				{
+					callback(*this, request.getResult(), request, {});
+				}
+			});
+		}
+		else
+		{
+			OnlineAssert(false, "Failed to construct a request.");
+		}
+
+		request->start();
+	}
+	
+	void SocialService::getRequests(
+		const std::string& accessToken,
+        const std::set<std::string>& profileFields,
+        GetRequestsCallback callback) 
+	{
+		JsonRequestPtr request = JsonRequest::Create(
+			getLocation() + "/requests", Request::METHOD_GET);
+
+		if (request)
+		{
+            request->setAPIVersion(API_VERSION);
+			
+            Json::Value profileFields_(Json::ValueType::arrayValue);
+            
+            for (const std::string& field: profileFields)
+            {
+                profileFields_.append(field);
+            }
+            
+			Request::Fields fields = {
+                {"access_token", accessToken },
+                {"profile_fields", Json::FastWriter().write(profileFields_)}
 			};
 
 			request->setRequestArguments(fields);
@@ -422,6 +539,74 @@ namespace online
 		}
 
 		request->start();
+	}
+
+	void SocialService::getUniqueNames(
+		const std::string& kind,
+		const std::string& query,
+		const std::string& accessToken,
+		GetUniqueNamesCallback callback,
+		bool requestProfiles,
+        const std::set<std::string>& profileFields)
+	{
+		JsonRequestPtr request = JsonRequest::Create(
+			getLocation() + "/names/search/" + kind, Request::METHOD_GET);
+
+		if (request)
+		{
+            request->setAPIVersion(API_VERSION);
+            
+			Request::Fields fields = {
+                {"access_token", accessToken },
+                {"query", query }
+			};
+
+			if (requestProfiles)
+			{
+				Json::Value profileFields_(Json::ValueType::arrayValue);
+            
+				for (const std::string& field: profileFields)
+				{
+					profileFields_.append(field);
+				}
+
+				fields["profile_fields"] = Json::FastWriter().write(profileFields_);
+			}
+			
+			request->setRequestArguments(fields);
+                
+			request->setOnResponse([=](const online::JsonRequest& request)
+			{
+				if (request.isSuccessful() && request.isResponseValueValid())
+				{
+					const Json::Value& value = request.getResponseValue();
+					SocialUniqueNames uniqueNames;
+					
+					if (value.isMember("names"))
+                    {
+                        const Json::Value& namesJson = value["names"];
+                        
+                        for (Json::ValueConstIterator it = namesJson.begin(); it != namesJson.end(); it++)
+                        {
+							uniqueNames.emplace_back(*it);
+                        }
+                    }
+					                    
+					callback(*this, request.getResult(), request, uniqueNames);
+				}
+				else
+				{
+					callback(*this, request.getResult(), request, {});
+				}
+			});
+		}
+		else
+		{
+			OnlineAssert(false, "Failed to construct a request.");
+		}
+
+		request->start();
+
 	}
 
 	SocialService::~SocialService()
