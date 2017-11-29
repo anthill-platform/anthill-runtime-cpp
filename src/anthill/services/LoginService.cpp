@@ -54,12 +54,24 @@ namespace online
 
 					if (!value.isMember("token"))
 					{
-						callback(*this, Request::MISSING_RESPONSE_FIELDS, request, "", Scopes());
+						callback(*this, Request::MISSING_RESPONSE_FIELDS, request, "", "", "", Scopes());
 
 						return;
 					}
                     
+					std::string account;
+					std::string credential;
                     Scopes scopes;
+
+					if (value.isMember("account"))
+					{
+						account = value["account"].asString();
+					}
+
+					if (value.isMember("credential"))
+					{
+						credential = value["credential"].asString();
+					}
                     
                     if (value.isMember("scopes"))
                     {
@@ -72,11 +84,11 @@ namespace online
                     }
 
 					std::string token = value["token"].asString();
-					callback(*this, request.getResult(), request, token, scopes);
+					callback(*this, request.getResult(), request, token, credential, account, scopes);
 				}
 				else
 				{
-					callback(*this, request.getResult(), request, "", Scopes());
+					callback(*this, request.getResult(), request, "", "", "", Scopes());
 				}
 			});
 		}
@@ -122,14 +134,27 @@ namespace online
 
 					if (!value.isMember("token"))
 					{
-						callback(*this, Request::MISSING_RESPONSE_FIELDS, request, "", Scopes());
+						callback(*this, Request::MISSING_RESPONSE_FIELDS, request, "", "", "", Scopes());
 
 						return;
 					}
 
 					std::string token = value["token"].asString();
                     
+					std::string account;
+					std::string credential;
                     Scopes scopes;
+
+					if (value.isMember("account"))
+					{
+						account = value["account"].asString();
+					}
+
+					if (value.isMember("credential"))
+					{
+						credential = value["credential"].asString();
+					}
+                    
     
                     if (value.isMember("scopes"))
                     {
@@ -141,7 +166,7 @@ namespace online
                         }
                     }
                     
-					callback(*this, request.getResult(), request, token, scopes);
+					callback(*this, request.getResult(), request, token, credential, account, scopes);
 				}
 				else
 				{
@@ -181,7 +206,7 @@ namespace online
 											else
 											{
 												Log::get() << "Bad merge option: " << it.name() << std::endl;
-												callback(*this, Request::BAD_ARGUMENTS, request, "", Scopes());
+												callback(*this, Request::BAD_ARGUMENTS, request, "", "", "", Scopes());
 												return;
 											}
 										}
@@ -198,24 +223,24 @@ namespace online
 									}
 									else
 									{
-										callback(*this, Request::BAD_ARGUMENTS, request, "", Scopes());
+										callback(*this, Request::BAD_ARGUMENTS, request, "", "", "", Scopes());
 									}
 								}
 								else
 								{
-									callback(*this, Request::BAD_ARGUMENTS, request, "", Scopes());
+									callback(*this, Request::BAD_ARGUMENTS, request, "", "", "", Scopes());
 								}
 							}
 							else
 							{
-								callback(*this, Request::BAD_ARGUMENTS, request, "", Scopes());
+								callback(*this, Request::BAD_ARGUMENTS, request, "", "", "", Scopes());
 							}
 
 							break;
 						}
 						default:
 						{
-							callback(*this, request.getResult(), request, "", Scopes());
+							callback(*this, request.getResult(), request, "", "", "", Scopes());
 							break;
 						}
                     }
@@ -265,12 +290,24 @@ namespace online
 
 					if (!value.isMember("token"))
 					{
-						callback(*this, Request::MISSING_RESPONSE_FIELDS, request, "", Scopes());
+						callback(*this, Request::MISSING_RESPONSE_FIELDS, request, "", "", "", Scopes());
 
 						return;
 					}
                     
+					std::string account;
+					std::string credential;
                     Scopes scopes;
+
+					if (value.isMember("account"))
+					{
+						account = value["account"].asString();
+					}
+
+					if (value.isMember("credential"))
+					{
+						credential = value["credential"].asString();
+					}
     
                     if (value.isMember("scopes"))
                     {
@@ -283,7 +320,7 @@ namespace online
                     }
 
 					std::string token = value["token"].asString();
-					callback(*this, request.getResult(), request, token, scopes);
+					callback(*this, request.getResult(), request, token, credential, account, scopes);
 				}
 				else
 				{
@@ -323,7 +360,7 @@ namespace online
 											else
 											{
 												Log::get() << "Bad merge option: " << it.name() << std::endl;
-												callback(*this, Request::BAD_ARGUMENTS, request, "", Scopes());
+												callback(*this, Request::BAD_ARGUMENTS, request, "", "", "", Scopes());
 												return;
 											}
 										}
@@ -331,7 +368,7 @@ namespace online
 										if (mergeOptions.size() != 2)
 										{
 											Log::get() << "Bad number of merge options: " << mergeOptions.size() << std::endl;
-											callback(*this, Request::BAD_ARGUMENTS, request, "", Scopes());
+											callback(*this, Request::BAD_ARGUMENTS, request, "", "", "", Scopes());
 											return;
 										}
 
@@ -347,24 +384,24 @@ namespace online
 									}
 									else
 									{
-										callback(*this, Request::BAD_ARGUMENTS, request, "", Scopes());
+										callback(*this, Request::BAD_ARGUMENTS, request, "", "", "", Scopes());
 									}
 								}
 								else
 								{
-									callback(*this, Request::BAD_ARGUMENTS, request, "", Scopes());
+									callback(*this, Request::BAD_ARGUMENTS, request, "", "", "", Scopes());
 								}
 							}
 							else
 							{
-								callback(*this, Request::BAD_ARGUMENTS, request, "", Scopes());
+								callback(*this, Request::BAD_ARGUMENTS, request, "", "", "", Scopes());
 							}
 
 							break;
 						}
 						default:
 						{
-							callback(*this, request.getResult(), request, "", Scopes());
+							callback(*this, request.getResult(), request, "", "", "", Scopes());
 							break;
 						}
 					}
@@ -414,12 +451,24 @@ namespace online
 
 					if (!value.isMember("token"))
 					{
-						callback(*this, Request::MISSING_RESPONSE_FIELDS, request, "", Scopes());
+						callback(*this, Request::MISSING_RESPONSE_FIELDS, request, "", "", "", Scopes());
 
 						return;
 					}
                     
+					std::string account;
+					std::string credential;
                     Scopes scopes;
+
+					if (value.isMember("account"))
+					{
+						account = value["account"].asString();
+					}
+
+					if (value.isMember("credential"))
+					{
+						credential = value["credential"].asString();
+					}
     
                     if (value.isMember("scopes"))
                     {
@@ -432,11 +481,11 @@ namespace online
                     }
 
 					std::string token = value["token"].asString();
-					callback(*this, request.getResult(), request, token, scopes);
+					callback(*this, request.getResult(), request, token, credential, account, scopes);
 				}
 				else
 				{
-					callback(*this, request.getResult(), request, "", Scopes());
+					callback(*this, request.getResult(), request, "", "", "", Scopes());
 				}
 			});
 		}

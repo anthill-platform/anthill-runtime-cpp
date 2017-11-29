@@ -41,7 +41,8 @@ namespace online
 		}
     }
 
-	void AuthenticateState::authenticateResult(const LoginService& service, Request::Result result, const Request& request, const std::string& accessToken)
+	void AuthenticateState::authenticateResult(const LoginService& service, Request::Result result, const Request& request, const std::string& accessToken,
+		const std::string& credential,  const std::string& account, const LoginService::Scopes& scopes)
 	{
         unlock();
         
@@ -56,6 +57,14 @@ namespace online
 			OnlineAssert((bool)ptr, "Login service is not initialized!");
 
 			ptr->setCurrentAccessToken(accessToken);
+			
+
+			const ListenerPtr& listener = online.getListener();
+
+			if (listener)
+			{
+				listener->authenticated(account, credential, scopes);
+			}
 
 			storage->set(CheckUserState::StorageAccessTokeneField, accessToken);
 			storage->save();
@@ -109,7 +118,7 @@ namespace online
         lock();
 
 		ptr->authenticateAnonymous(m_username, m_password, m_gamespace, m_scopes, Request::Fields(),
-			std::bind(&AuthenticateState::authenticateResult, this, _1, _2, _3, _4),
+			std::bind(&AuthenticateState::authenticateResult, this, _1, _2, _3, _4, _5, _6, _7),
             std::bind(&AuthenticateState::merge, this, _1, _2, _3), m_shouldHaveScopes);
 	}
 

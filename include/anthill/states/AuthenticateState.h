@@ -32,7 +32,8 @@ namespace online
 		virtual void init() override;
 		virtual void release() override;
 
-		void authenticateResult(const LoginService& service, Request::Result result, const Request& request, const std::string& accessToken);
+		void authenticateResult(const LoginService& service, Request::Result result, const Request& request, const std::string& accessToken,
+			 const std::string& credential,  const std::string& account, const LoginService::Scopes& scopes);
         void merge(const LoginService& service, const LoginService::MergeOptions options, LoginService::MergeResolveCallback resolve);
 
 	private:

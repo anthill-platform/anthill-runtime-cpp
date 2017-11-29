@@ -26,6 +26,11 @@ namespace online
 		{
 			//
 		}
+
+		virtual void authenticated(const std::string& account, const std::string& credential, const online::LoginService::Scopes& scopes)
+		{
+			//
+		}
 	};
 };
 
