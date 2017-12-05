@@ -39,6 +39,13 @@ namespace online
                 {
                     Log::get() << "Access token is valid!" << std::endl;
 
+					const ListenerPtr& listener = AnthillRuntime::Instance().getListener();
+
+					if (listener)
+					{
+						listener->authenticated(account, credential, scopes);
+					}
+
                     proceed();
                     return;
                 }

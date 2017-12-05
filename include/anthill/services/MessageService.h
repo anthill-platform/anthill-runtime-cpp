@@ -20,12 +20,14 @@ namespace online
     class MessageSession: public std::enable_shared_from_this<MessageSession>
     {
     public:
+		typedef std::set<std::string> MessageFlags;
+
 		typedef std::function< void(bool success, const std::string& response) > MessageSendCallback;
 		typedef std::function< void(bool success, const std::string& reason) > ListenCallback;
 		typedef std::function< void(int code, const std::string& reason) > ConnectionClosedCallback;
 		typedef std::function< bool(const std::string& uuid, const std::string& sender, const std::string& recipientClass,
                                     const std::string& recipient, const std::string& messageType, const Json::Value& message, 
-									const std::string& time) > MessageCallback;
+									const std::string& time, const MessageFlags& flags) > MessageCallback;
         
     public:
         static MessageSessionPtr Create(const std::string location);

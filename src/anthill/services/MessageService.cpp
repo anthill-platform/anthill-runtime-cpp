@@ -7,6 +7,8 @@
 
 #include <json/writer.h>
 
+#include <set>
+
 namespace online
 {
     const std::string MessageService::ID = "message";
@@ -141,8 +143,20 @@ namespace online
             std::string messageType = params["message_type"].asString();
             std::string time = params["time"].asString();
             const Json::Value& payload = params["payload"];
+
+			MessageFlags flags;
+
+			if (params.isMember("flags"))
+			{
+				const Json::Value& flags_ = params["flags"];
+
+				for (Json::ValueConstIterator it = flags_.begin(); it != flags_.end(); it++)
+				{
+					flags.insert(it->asString());
+				}
+			}
             
-            message(uuid, sender, recipientClass, recipient, messageType, payload, time);
+            message(uuid, sender, recipientClass, recipient, messageType, payload, time, flags);
         });
 
     }
