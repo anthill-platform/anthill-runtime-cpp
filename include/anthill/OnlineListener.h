@@ -31,6 +31,21 @@ namespace online
 		{
 			//
 		}
+
+		virtual bool shouldHaveExternalAuthenticator()
+		{
+			return false;
+		}
+
+		virtual ExternalAuthenticatorPtr createExternalAuthenticator()
+		{
+			return nullptr;
+		}
+
+		virtual bool shouldSaveExternalStorageAccessToken()
+		{
+			return true;
+		}
 	};
 };
 

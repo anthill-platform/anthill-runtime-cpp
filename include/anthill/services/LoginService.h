@@ -13,6 +13,7 @@
 namespace online
 {
 	typedef std::shared_ptr< class LoginService > LoginServicePtr;
+	typedef std::shared_ptr< class ExternalAuthenticator > ExternalAuthenticatorPtr;
 
 	class AnthillRuntime;
 
@@ -39,7 +40,10 @@ namespace online
         
 		typedef std::function< void(const LoginService& service, Request::Result result, const Request& request,
             const Credentials& credentials) > GetCredentialsCallback;
-            
+        
+        typedef std::function< void(const LoginService& service, Request::Result result, const Request& request,
+            std::set<std::string> accountIds) > GetAccountIdsCallback;
+        
 		typedef std::function< void(const MergeOption& selectedOption) > MergeResolveCallback;
 		typedef std::function< void(const LoginService& service, const MergeOptions options, MergeResolveCallback resolve) > MergeRequiredCallback;
 
@@ -64,6 +68,11 @@ namespace online
 		void getCredentials(const std::string& accessToken, GetCredentialsCallback callback);
 		void getCredentials(GetCredentialsCallback callback);
 
+        void getAccountIdsByCredentials(
+            const std::set< std::string >& credentials,
+            const std::string& accessToken,
+            GetAccountIdsCallback callback);
+        
 		void authenticate(
 			const std::string& credentialType,
 			const std::string& gamespace,
@@ -101,11 +110,32 @@ namespace online
 			MergeRequiredCallback mergeRequiredCallback,
             const Scopes& shouldHaveScopes = {"*"});
 
+		bool authenticateExternally(
+			const std::string& gamespace,
+			const LoginService::Scopes& scopes,
+			const Request::Fields& other,
+			LoginService::AuthenticationCallback callback,
+			LoginService::MergeRequiredCallback mergeRequiredCallback,
+            const LoginService::Scopes& shouldHaveScopes = {"*"});
+		
+		bool attachExternally(
+			const std::string& gamespace,
+			const LoginService::Scopes& scopes,
+			const Request::Fields& other,
+			LoginService::AuthenticationCallback callback,
+			LoginService::MergeRequiredCallback mergeRequiredCallback,
+            const LoginService::Scopes& shouldHaveScopes = {"*"});
+
+		bool hasExternalAuthenticator() const;
+
 		void validateAccessToken(ValidationCallback callback);
 		void validateAccessToken(const std::string& accessToken, ValidationCallback callback);
 
 		const std::string& getCurrentAccessToken() const;
 		void setCurrentAccessToken(const std::string& token);
+
+		void setExternalAuthenticator(const ExternalAuthenticatorPtr& externalAuthenticator) { m_externalAuthenticator = externalAuthenticator; }
+		const ExternalAuthenticatorPtr& getExternalAuthenticator() const { return m_externalAuthenticator; }
 
 	protected:
 		LoginService(const std::string& location);
@@ -113,7 +143,37 @@ namespace online
 
 	private:
 		std::string m_currentToken;
+		ExternalAuthenticatorPtr m_externalAuthenticator;
 	};
+
+	class ExternalAuthenticator
+	{
+		friend class LoginService;
+		
+	public:
+		virtual std::string getCredentialType() = 0;
+
+	protected:
+
+		virtual void authenticate(
+			LoginService& loginService,
+			const std::string& gamespace,
+			const LoginService::Scopes& scopes,
+			const Request::Fields& other,
+			LoginService::AuthenticationCallback callback,
+			LoginService::MergeRequiredCallback mergeRequiredCallback,
+            const LoginService::Scopes& shouldHaveScopes = {"*"}) = 0;
+
+		virtual void attach(
+			LoginService& loginService,
+			const std::string& gamespace,
+			const LoginService::Scopes& scopes,
+			const Request::Fields& other,
+			LoginService::AuthenticationCallback callback,
+			LoginService::MergeRequiredCallback mergeRequiredCallback,
+            const LoginService::Scopes& shouldHaveScopes = {"*"}) = 0;
+	};
+
 };
 
 #endif

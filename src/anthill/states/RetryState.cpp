@@ -17,17 +17,26 @@ namespace online
 	{
 		OnlineAssert(tryState->ID() != RetryState::ID(), "Cannot put RetryState inside of RetryState.");
 
-		AnthillRuntime::Instance().getFutures().add(tryState->getRetryTime(), [this]()
-		{
-			Log::get() << "Retrying state '" << m_tryState->ID() << std::endl;
 
-			switchTo(m_tryState);
-		});
+		
 	}
 
 	void RetryState::init()
 	{
-		//
+		std::weak_ptr< RetryState > weakPtr = std::static_pointer_cast< RetryState >( shared_from_this() );
+
+		AnthillRuntime::Instance().getFutures().add(
+			m_tryState->getRetryTime(), 
+			[weakPtr]()
+			{
+				std::shared_ptr< RetryState > ptr = weakPtr.lock();
+				if (!ptr)
+					return;
+
+				Log::get() << "Retrying state '" << ptr->m_tryState->ID() << std::endl;
+
+				ptr->switchTo(ptr->m_tryState);
+			} );
 	}
 
 	void RetryState::release()

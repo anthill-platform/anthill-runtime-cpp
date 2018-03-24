@@ -4,6 +4,8 @@
 #include "anthill/AnthillRuntime.h"
 #include "anthill/Utils.h"
 
+#include "json/writer.h"
+
 namespace online
 {
 	const std::string LoginService::ID = "login";
@@ -22,7 +24,12 @@ namespace online
 	LoginService::LoginService(const std::string& location) :
 		Service(location)
 	{
-		
+		const ListenerPtr& onlineListener = AnthillRuntime::Instance().getListener();
+
+		if (onlineListener && onlineListener->shouldHaveExternalAuthenticator())
+		{
+			setExternalAuthenticator(onlineListener->createExternalAuthenticator());
+		}
 	}
 
     void LoginService::extend(
@@ -563,6 +570,64 @@ namespace online
 		request->start();
     }
     
+    void LoginService::getAccountIdsByCredentials(
+                                                   const std::set< std::string >& credentials,
+                                                   const std::string& accessToken,
+                                                   GetAccountIdsCallback callback)
+    {
+        JsonRequestPtr request = JsonRequest::Create(
+                                                     getLocation() + "/accounts/credentials", Request::METHOD_GET);
+        
+        if (request)
+        {
+            request->setAPIVersion(API_VERSION);
+            
+            Json::Value credentials_(Json::ValueType::arrayValue);
+            for (const std::string& credential: credentials)
+            {
+                credentials_.append(credential);
+            }
+            
+            Request::Fields fields = {
+                {"access_token", accessToken },
+                {"credentials", Json::FastWriter().write(credentials_)}
+            };
+            
+            request->setRequestArguments(fields);
+            
+            request->setOnResponse([=](const online::JsonRequest& request)
+                                   {
+                                       if (request.isSuccessful() && request.isResponseValueValid())
+                                       {
+                                           const Json::Value& value = request.getResponseValue();
+                                           std::set<std::string> accountIds;
+                                           
+                                           if (value.isMember("account_ids"))
+                                           {
+                                               const Json::Value& requestsJson = value["account_ids"];
+                                               
+                                               for (Json::ValueConstIterator it = requestsJson.begin(); it != requestsJson.end(); it++)
+                                               {
+                                                   accountIds.insert( it->asString() );
+                                               }
+                                           }
+                                           
+                                           callback(*this, request.getResult(), request, accountIds);
+                                       }
+                                       else
+                                       {
+                                           callback(*this, request.getResult(), request, {});
+                                       }
+                                   });
+        }
+        else
+        {
+            OnlineAssert(false, "Failed to construct a request.");
+        }
+        
+        request->start();
+    }
+    
     void LoginService::getCredentials(GetCredentialsCallback callback)
     {
         getCredentials(getCurrentAccessToken(), callback);
@@ -609,12 +674,27 @@ namespace online
                         {
                             scopes.insert(it->asString());
                         }
+
+						if (scopes.empty())
+						{
+							Log::get() << "LoginService::validateAccessToken: scopes are empty!" << std::endl;
+						}
                     }
+					else
+					{
+						Log::get() << "LoginService::validateAccessToken: scopes field is not found!" << std::endl;
+					}
 
                     callback(*this, request.getResult(), request, credential, account, scopes);
                 }
                 else
                 {
+					if (!request.isSuccessful())
+						Log::get() << "LoginService::validateAccessToken: request failed!" << std::endl;
+					else
+					if (!request.isResponseValueValid())
+						Log::get() << "LoginService::validateAccessToken: request response value is not valid!" << std::endl;
+
                     callback(*this, request.getResult(), request, "", "", {});
                 }
                 
@@ -626,6 +706,57 @@ namespace online
 		}
 
 		request->start();
+	}
+		
+	bool LoginService::hasExternalAuthenticator() const
+	{
+		return (bool)m_externalAuthenticator;
+	}
+	
+	bool LoginService::authenticateExternally(
+		const std::string& gamespace,
+		const LoginService::Scopes& scopes,
+		const Request::Fields& other,
+		LoginService::AuthenticationCallback callback,
+		LoginService::MergeRequiredCallback mergeRequiredCallback,
+        const LoginService::Scopes& shouldHaveScopes)
+	{
+		if (!m_externalAuthenticator)
+			return false;
+
+		m_externalAuthenticator->authenticate(
+			*this,
+			gamespace,
+			scopes,
+			other,
+			callback,
+			mergeRequiredCallback,
+			shouldHaveScopes);
+
+		return true;
+	}
+		
+	bool LoginService::attachExternally(
+		const std::string& gamespace,
+		const LoginService::Scopes& scopes,
+		const Request::Fields& other,
+		LoginService::AuthenticationCallback callback,
+		LoginService::MergeRequiredCallback mergeRequiredCallback,
+        const LoginService::Scopes& shouldHaveScopes)
+	{
+		if (!m_externalAuthenticator)
+			return false;
+
+		m_externalAuthenticator->attach(
+			*this,
+			gamespace,
+			scopes,
+			other,
+			callback,
+			mergeRequiredCallback,
+			shouldHaveScopes);
+		
+		return true;
 	}
 
 	void LoginService::validateAccessToken(ValidationCallback callback)
