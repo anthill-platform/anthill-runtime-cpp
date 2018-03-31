@@ -1,17 +1,31 @@
 
-project(Anthill)
+project(Anthill CXX)
+
 set(CURL_MIN_VERSION "7.28.0")
 
-add_directory(. ROOT)
-add_directory(src SRCS)
-add_directory(include INCLUDE)
-include_directories(include)
+file(GLOB SOURCES
+    src/anthill/*.cpp
+    src/anthill/requests/*.cpp
+    src/anthill/services/*.cpp
+    src/anthill/states/*.cpp
+)
 
-# Add definitions
-add_definitions(-DBUILD_LIBRARY)
+include_directories(
+	include
+)
+
+set(CURL_STATICLIB ON CACHE BOOL "Curl should be build statically")
+set(BUILD_SHARED_LIBS OFF)
+
+set(LIBUV_LIBRARY uv CACHE STRING "uv library name")
+set(CURLCPP_LIBRARY curlcpp CACHE STRING "curlcpp library name")
+set(JSONCPP_LIBRARY jsoncpp_lib_static CACHE STRING "jsoncpp library name")
+set(UWS_LIBRARY uWS CACHE STRING "uWebSockets library name")
+set(OPENSSL_LIBRARY openssl CACHE STRING "OpenSSL library name")
+set(ANTHILL_LIBRARY AnthillRuntime CACHE STRING "AnthillRuntime library name")
 
 # The library itself
-add_library(AnthillRuntime STATIC ${ROOT})
+add_library(AnthillRuntime STATIC ${SOURCES})
 
 if( APPLE )
 	set( CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++" )
@@ -27,9 +41,12 @@ endif ()
 
 target_include_directories(AnthillRuntime PUBLIC 
 	${OPENSSL_SOURCE_DIR}
-	"${CURLCPP_SOURCE_DIR}/include")
+	${JSONCPP_INCLUDE_DIR}
+	${CURLCPP_INCLUDE_DIR}
+	"${UWS_DIR}/src"
+)
 
-target_link_libraries(AnthillRuntime curlcpp jsoncpp_lib_static uWS)
+target_link_libraries(AnthillRuntime ${CURLCPP_LIBRARY} ${JSONCPP_LIBRARY} ${UWS_LIBRARY} ${OPENSSL_LIBRARY})
 
 if (APPLE)
 	add_definitions(-DUSE_DARWINSSL)
